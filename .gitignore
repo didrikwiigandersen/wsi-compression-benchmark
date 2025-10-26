@@ -5,6 +5,8 @@ __pycache__/
 env/
 .venv/
 
+scripts/compare_wsi_jxl_vs_jpg.py
+
 # Data / results
 data/
 results/

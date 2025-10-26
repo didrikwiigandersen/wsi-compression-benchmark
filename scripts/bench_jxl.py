@@ -10,12 +10,12 @@ import subprocess
 from PIL import Image
 from skimage.metrics import structural_similarity as ssim
 
-# Settings
+# ------------ Settings --------------
 SLIDE_PATH = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/data/sample.ndpi"
 TILE_SIZE = 1024 # Adjust: 256, 1024, and 4096
-LEVEL = 0
-DISTANCE = 1.0
-EFFORT = 7
+LEVEL = 0 # keep at 0
+DISTANCE = 0 # 0 = lossless (compression goes down, SSIM up), 1 = near-lossless
+EFFORT = 7 # how hard the encoder works to find the best compression (high => more time, but smaller file)
 SAVE_IMAGES = True
 
 def read_tile(slide_path, level=0, x=None, y=None, tile_size=1024):
