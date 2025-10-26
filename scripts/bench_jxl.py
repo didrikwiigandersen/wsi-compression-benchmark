@@ -1,9 +1,14 @@
+import math
 import time
+import numpy as np
 from pathlib import Path
 
 import openslide
 import tempfile
 import subprocess
+
+from PIL import Image
+from skimage.metrics import structural_similarity as ssim
 
 # Settings
 SLIDE_PATH = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/data/sample.ndpi"
@@ -85,26 +90,42 @@ def main():
         ]
         dec_time = run_cmd(dec_cmd)
 
-        print(f"encode time: {enc_time}")
-        print(f"decode time: {dec_time}")
+        # ---------- Comparison -------------
 
+        # Open the compressed PNG file djxl made
+        # img = original uncompressed tile
+        # dec = the same tile after compress + decompress
+        dec = Image.open(dec_png).convert("RGB")
 
+        # Convert the images into arrays for comparison
+        a = np.asarray(img, dtype=np.float32) / 255.0
+        b = np.asarray(dec, dtype=np.float32) / 255.0
 
+        # Calls structural similarity index measure
+        # 1: identical
+        # 0.99+: visually indistinguishable
+        # <0.9: noticeable degradation
+        s = ssim(a, b, channel_axis=2, data_range=1.0)
 
+        # Compression ratio
+        # How many times smaller the compressed file is compared to the original
+        ratio = raw_bytes / jxl_bytes if jxl_bytes > 0 else math.inf
 
+        print("\n=== JPEG-XL Result ===")
+        print(f"Distance (quality): {DISTANCE}")
+        print(f"Effort:             {EFFORT}")
+        print(f"PNG bytes:          {raw_bytes:,}")
+        print(f"JXL bytes:          {jxl_bytes:,}")
+        print(f"Compression ratio:  {ratio:.2f}×")
+        print(f"SSIM:               {s:.6f}")
+        print(f"Encode time:        {enc_time * 1000:.1f} ms")
+        print(f"Decode time:        {dec_time * 1000:.1f} ms")
 
-
-
-
-
-
-
-
-
-
-
-
-
+        # -------------- Saving files -------------
+        if SAVE_IMAGES:
+            img.save("/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/results/tile_original.png")
+            dec.save("/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/results/tile_decoded.png")
+            print("\nSaved: tile_original.png, tile_decoded.png")
 
 if __name__ == '__main__':
     main()
