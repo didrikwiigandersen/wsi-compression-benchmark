@@ -2,5 +2,5 @@ openslide-python
 pillow
 numpy
 scikit-image
-pyvips
-matplotlib
+
+
