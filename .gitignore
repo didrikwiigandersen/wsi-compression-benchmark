@@ -13,3 +13,6 @@ results/
 
 # OS files
 .DS_Store
+
+# JetBrains
+.idea/
