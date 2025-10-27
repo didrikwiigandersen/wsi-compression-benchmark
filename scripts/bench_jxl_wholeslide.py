@@ -18,7 +18,7 @@ LEVEL = 0 # keep at 0
 DISTANCE = 0.5 # 0 = lossless (compression goes down, SSIM up), 1 = near-lossless
 EFFORT = 7 # how hard the encoder works to find the best compression (high => more time, but smaller file)
 
-TILE_SIZE = 256 # Adjust: 256, 1024, and 4096
+TILE_SIZE = 1024 # Adjust: 256, 1024, and 4096
 STRIDE = TILE_SIZE
 
 SAVE_EXAMPLE = True
