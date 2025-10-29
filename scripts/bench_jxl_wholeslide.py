@@ -2,6 +2,14 @@
 Compress an entire WSI with JPEG-XL. Reports total bytes, encode/decode times, and SSIM.
 """
 
+# qupath to view the slides
+# can check the properties of the slide
+
+# with too big
+
+#concentriq ls imaging
+
+
 # -------------- Packages ----------------
 import math, subprocess, tempfile, time, openslide
 import numpy as np
