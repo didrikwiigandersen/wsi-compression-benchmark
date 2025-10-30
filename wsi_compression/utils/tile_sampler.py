@@ -6,94 +6,29 @@ is marked as selected. Otherwise, another tile is selected.
 The sample is passed as an argument to the codec engines for compression. The process of tile sampling is separate
 to ensure that the codec-engines work on the same data.
 """
-from dataclasses import dataclass
-# ---------------- Packages --------------------
-from typing import List, Dict, Tuple
 
+# ---------------- Packages --------------------
+from wsi_compression.utils.classes.Tile import Tile
+from wsi_compression.utils.helpers import (
+    _load_mask_boolean,
+    _slide_mask_scales,
+    _mask_rect_has_tissue,
+    _iou_rect
+)
+
+from typing import List
 import openslide
 import numpy as np
-import math
 import csv
-from PIL import Image
 
-# ---------------- Global variables --------------------
+# ---------------- Global variables (for tuning) --------------------
 TILE_SIZE = 256
 NUM_TILES = 1000
 SEED = 42
 MIN_TISSUE_FRAC = 1
 MAX_ATTEMPTS = 1_000_000
 MAX_IOU = 0
-WRITE_CSV = True
-
-
-# ---------------- Classes --------------------
-@dataclass(frozen=True)
-class Tile:
-    x: int
-    y: int
-    w: int
-    h: int
-
-    def as_dict(self) -> Dict[str, int]:
-        return {
-            "x": self.x,
-            "y": self.y,
-            "w": self.w,
-            "h": self.h
-        }
-
-# ---------------- Helper functions --------------------
-def _load_mask_boolean(mask_png_path: str) -> np.ndarray:
-    """
-    Load a mask PNG as a boolean array (True = tissue).
-    Any nonzero grayscale value is considered tissue.
-    """
-    mask_img = Image.open(mask_png_path).convert('L') # grayscale
-    mask_arr = np.array(mask_img, dtype=np.uint8)
-    tissue = mask_arr > 0
-    return tissue
-
-def _slide_mask_scales(slide: openslide.OpenSlide, mask_bool: np.ndarray) -> Tuple[float, float]:
-    """
-    Compute scale factors to map slide level-0 coords to mask indices.
-    mask_x = round(slide_x * sx), mask_y = round(slide_y * sy)
-    """
-    slide_w, slide_h = slide.dimensions  # level-0 size
-    mask_h, mask_w = mask_bool.shape
-    sx = mask_w / float(slide_w)
-    sy = mask_h / float(slide_h)
-    return sx, sy
-
-def _mask_rect_has_tissue(mask_bool: np.ndarray, x0: int, y0: int, w: int, h: int, sx: float, sy: float) -> Tuple[bool, int, int]:
-    """
-    Given a slide-space rectangle (x0,y0,w,h), check if ANY mask pixel in the corresponding
-    mask-space rectangle is tissue. Returns (has_tissue, tissue_count, examined_count).
-    """
-    # Map slide rect to mask rect
-    mx0 = max(0, int(math.floor(x0 * sx)))
-    my0 = max(0, int(math.floor(y0 * sy)))
-    mx1 = min(mask_bool.shape[1], int(math.ceil((x0 + w) * sx)))
-    my1 = min(mask_bool.shape[0], int(math.ceil((y0 + h) * sy)))
-
-    if mx1 <= mx0 or my1 <= my0:  # degenerate mapping (shouldn't happen)
-        return False, 0, 0
-
-    patch = mask_bool[my0:my1, mx0:mx1]
-    tissue_count = int(patch.sum())
-    examined = patch.size
-    return (tissue_count > 0), tissue_count, examined
-
-def _iou_rect(ax, ay, aw, ah, bx, by, bw, bh) -> float:
-    ax1, ay1 = ax + aw, ay + ah
-    bx1, by1 = bx + bw, by + bh
-    inter_w = max(0, min(ax1, bx1) - max(ax, bx))
-    inter_h = max(0, min(ay1, by1) - max(ay, by))
-    inter = inter_w * inter_h
-    if inter == 0:
-        return 0.0
-    union = aw*ah + bw*bh - inter
-    return inter / union
-
+WRITE_CSV = False
 
 # ---------------- Main --------------------
 def sample_tiles_with_mask(slide_path: str, mask_png_path: str) -> List[Tile]:
@@ -101,7 +36,6 @@ def sample_tiles_with_mask(slide_path: str, mask_png_path: str) -> List[Tile]:
     Samples 1000 unique tiles from 'slide_path', using 'mask_png_path' to ensure tissue presence.
     Returns: List[Tile] (level-0 coordinates). Also writes CSV '<slide_path>.tile_coords.csv'.
     """
-
     slide = openslide.OpenSlide(slide_path)
     try:
         slide_w, slide_h = slide.dimensions
@@ -114,7 +48,7 @@ def sample_tiles_with_mask(slide_path: str, mask_png_path: str) -> List[Tile]:
         mask_bool = _load_mask_boolean(mask_png_path)
         sx, sy = _slide_mask_scales(slide, mask_bool)
 
-        # Optional sanity: warn if aspect ratios differ a lot
+        # Warn if aspect ratios differ a lot
         mask_h, mask_w = mask_bool.shape
         slide_ar = slide_w / max(1.0, float(slide_h))
         mask_ar = mask_w / max(1.0, float(mask_h))

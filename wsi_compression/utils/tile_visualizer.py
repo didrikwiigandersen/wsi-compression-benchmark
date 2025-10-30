@@ -1,33 +1,26 @@
+"""
+Used to visualize the chosen tiles over the mask.
+"""
 
-
-
-
+# ---------------- Packages --------------------
 from typing import List, Tuple
 import numpy as np
 from PIL import Image, ImageDraw
 import openslide
+from wsi_compression.utils.helpers import _load_mask_boolean
 
-def _load_mask_boolean(mask_png_path: str) -> np.ndarray:
-    """
-    Load a mask PNG as a boolean array (True = tissue).
-    Any nonzero grayscale value is considered tissue.
-    """
-    mask_img = Image.open(mask_png_path).convert('L') # grayscale
-    mask_arr = np.array(mask_img, dtype=np.uint8)
-    tissue = mask_arr > 0
-    return tissue
-
+# ---------------- Main --------------------
 def visualize_tiles_on_overview(
     slide_path: str,
     mask_png_path: str,
-    tiles: List[dict] | List,      # list of dicts or your Tile dataclass
-    out_path: str = "overview_with_tiles.png",
-    max_width: int = 2048,         # thumbnail width
-    draw_every: int = 1,           # draw every k-th tile for clarity
-    show_mask: bool = True,        # overlay mask as translucent tint
+    tiles: List[dict] | List,
+    out_path: str = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/results/wsi_compression/images/overview_with_tiles.png",
+    max_width: int = 2048,
+    draw_every: int = 1,
+    show_mask: bool = False,
     tile_outline: Tuple[int, int, int] = (0, 255, 0),  # green
-    tile_width: int = 2,           # outline thickness
-    mask_tint_rgba: Tuple[int, int, int, int] = (255, 0, 0, 80) # red, alpha
+    tile_width: int = 2,
+    mask_tint_rgba: Tuple[int, int, int, int] = (255, 0, 0, 80)
 ) -> str:
     slide = openslide.OpenSlide(slide_path)
     try:
@@ -37,7 +30,7 @@ def visualize_tiles_on_overview(
         thumb_size = (max_width, int(round(slide_h * scale)))
         thumb = slide.get_thumbnail(thumb_size).convert("RGBA")
 
-        # Optional: overlay mask as tint
+        # Overlay mask as tint
         if show_mask and mask_png_path:
             mask_bool = _load_mask_boolean(mask_png_path)  # shape (H, W), True=tissue
             mask_img = Image.fromarray((mask_bool.astype(np.uint8) * 255), mode="L")
@@ -65,7 +58,7 @@ def visualize_tiles_on_overview(
                 draw.rectangle([x0-k, y0-k, x1+k, y1+k], outline=tile_outline, width=1)
 
         thumb.save(out_path)
-        print(f"[viz] wrote {out_path}")
+        print(f"[visualizer] wrote {out_path}")
         return out_path
     finally:
         slide.close()
