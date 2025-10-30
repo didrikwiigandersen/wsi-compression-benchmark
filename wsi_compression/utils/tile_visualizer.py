@@ -17,7 +17,7 @@ def visualize_tiles_on_overview(
     out_path: str = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/results/wsi_compression/images/overview_with_tiles.png",
     max_width: int = 2048,
     draw_every: int = 1,
-    show_mask: bool = False,
+    show_mask: bool = True,
     tile_outline: Tuple[int, int, int] = (0, 255, 0),  # green
     tile_width: int = 2,
     mask_tint_rgba: Tuple[int, int, int, int] = (255, 0, 0, 80)

@@ -19,7 +19,6 @@ from wsi_compression.utils.helpers import (
 from typing import List
 import openslide
 import numpy as np
-import csv
 
 # ---------------- Global variables (for tuning) --------------------
 TILE_SIZE = 256
@@ -28,7 +27,6 @@ SEED = 42
 MIN_TISSUE_FRAC = 1
 MAX_ATTEMPTS = 1_000_000
 MAX_IOU = 0
-WRITE_CSV = False
 
 # ---------------- Main --------------------
 def sample_tiles_with_mask(slide_path: str, mask_png_path: str) -> List[Tile]:
@@ -109,25 +107,14 @@ def sample_tiles_with_mask(slide_path: str, mask_png_path: str) -> List[Tile]:
 
             # Accept tile
             chosen_set.add(key)
-            chosen.append(Tile(x=x0, y=y0, w=TILE_SIZE, h=TILE_SIZE))
+            tile_id = len(chosen)
+            chosen.append(Tile(id=tile_id, x=x0, y=y0, w=TILE_SIZE, h=TILE_SIZE, area=coverage))
 
         if len(chosen) < NUM_TILES:
             raise RuntimeError(
                 f"Only found {len(chosen)} unique tiles with tissue after {attempts} attempts. "
                 f"Consider reducing TILE_SIZE or NUM_TILES, or verify the mask coverage."
             )
-
-        if WRITE_CSV:
-            csv_path = slide_path + ".tile_coords.csv"
-            with open(csv_path, "w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=["tile_id", "x", "y", "w", "h"])
-                writer.writeheader()
-                for i, t in enumerate(chosen):
-                    row = {"tile_id": i}
-                    row.update(t.as_dict())
-                    writer.writerow(row)
-            print(f"[tile-sampler] Wrote {len(chosen)} tiles to {csv_path} (seed={SEED}).")
-
         return chosen
 
     finally:
