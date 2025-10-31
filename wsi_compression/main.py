@@ -33,7 +33,7 @@ def main():
 
     # -------------------- Running codec engines ----------------------- #
     jpeg_result = jpg_run_tiles(slide_path, tiles)
-    #jxl_result = jxl_run_tiles(slide_path, tiles, jpeg_result)
+    jxl_result = jxl_run_tiles(slide_path, tiles, jpeg_result)
     #j2k_result = j2k_run_tiles(slide_path, tiles, jpeg_result)
 
     # -------------------- Analysis ---------------------------------- #

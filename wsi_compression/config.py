@@ -18,16 +18,13 @@ class Settings:
     SSIM_TOL: float = 1e-3
     MAX_ITERS: int = 12
 
-    # JXL turning
+    # JXL tuning
     JXL_EFFORT: int = 7
     JXL_DIST_LO: float = 0.0
     JXL_DIST_HI: float = 3.0
     JXL_DIST_MAX: float = 6.0
 
-    # J2k turning
+    # J2k tuning
     J2K_RATE_LO: float = 1.0
     J2K_RATE_HI: float = 600.0
     J2K_RATE_MAX: float = 1200.0
-
-
-

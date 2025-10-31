@@ -10,11 +10,11 @@ from wsi_compression.config import Settings
 from wsi_compression.utils.classes.Result import Result
 from wsi_compression.utils.classes.Tile import Tile
 from wsi_compression.utils.engines.jpeg_helpers import (
-    _raw_bytes,
-    _read_tile_rgb,
-    _encode_jpeg_to_bytes,
-    _decode_jpeg_bytes_to_rgb,
-    _ssim_rgb
+    raw_bytes,
+    read_tile_rgb,
+    encode_jpeg_to_bytes,
+    decode_jpeg_bytes_to_rgb,
+    ssim_rgb
 )
 
 # ----------------------- Main ----------------------- #
@@ -41,23 +41,23 @@ def jpg_run_tiles(
         # Iterate over each tile
         for t in tiles:
             # Read raw file
-            raw = _read_tile_rgb(slide, t)
+            raw = read_tile_rgb(slide, t)
 
             # Encode to JPEG
             t0 = time.perf_counter()
-            jpeg_bytes = _encode_jpeg_to_bytes(raw, quality=q)
+            jpeg_bytes = encode_jpeg_to_bytes(raw, quality=q)
             t1 = time.perf_counter()
 
             # Decode from JPEG
             t2 = time.perf_counter()
-            recon = _decode_jpeg_bytes_to_rgb(jpeg_bytes)
+            recon = decode_jpeg_bytes_to_rgb(jpeg_bytes)
             t3 = time.perf_counter()
 
             # Compute metrics
-            rb = _raw_bytes(t.w, t.h) # raw = 3 * W * H
+            rb = raw_bytes(t.w, t.h) # raw = 3 * W * H
             bo = len(jpeg_bytes)      # compressed bytes
             cr = rb / max(1, bo)      # compressed vs raw bytes
-            s = _ssim_rgb(raw, recon) # structural similarity
+            s = ssim_rgb(raw, recon) # structural similarity
 
             # Make a result object
             m = Result(
