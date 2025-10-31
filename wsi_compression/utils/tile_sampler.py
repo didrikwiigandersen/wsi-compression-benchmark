@@ -22,7 +22,7 @@ import numpy as np
 
 # ---------------- Global variables (for tuning) --------------------
 TILE_SIZE = 256
-NUM_TILES = 50
+NUM_TILES = 20
 SEED = 42
 MIN_TISSUE_FRAC = 1
 MAX_ATTEMPTS = 1_000_000
