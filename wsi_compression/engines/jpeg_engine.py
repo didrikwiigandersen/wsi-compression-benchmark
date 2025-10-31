@@ -1,38 +1,38 @@
 """
-JPEG engine. Encodes tiles passed in, decode back. Measures time, compression ratio. Return this as an object.
+JPEG engine. Encodes tiles passed in, decode back. Measures time, compression ratio. Returns this as a Result object.
 """
-import time
-
-import numpy as np
-
 # ----------------------- Packages ----------------------- #
+from typing import List
+import time
+import openslide
+
+from wsi_compression.config import Settings
 from wsi_compression.utils.classes.Result import Result
 from wsi_compression.utils.classes.Tile import Tile
-from wsi_compression.utils.engine_helpers import (
+from wsi_compression.utils.engines.jpeg_helpers import (
     _raw_bytes,
     _read_tile_rgb,
     _encode_jpeg_to_bytes,
+    _decode_jpeg_bytes_to_rgb,
     _ssim_rgb
 )
-from typing import List
-import openslide
-import io
-from PIL import Image
 
 # ----------------------- Main ----------------------- #
 def jpg_run_tiles(
     slide_path: str,
     tiles: List[Tile],
-    jpeg_quality: int = 80 # will never be lossless, inherent to JPEG format
 ) -> List[Result]:
     """
     Takes in-memory tiles, returns in-memory Results list.
-    :param tiles:
-    :param jpeg_quality:
-    :return:
+    :param slide_path: The path to the .ndpi slide.
+    :param tiles: The coordinates of the selected tiles from tile_sampler.py
+    :return: A list of Result objects.
     """
 
     # ---------------- Setup ----------------- #
+    s = Settings()
+    q = max(1, min(100, s.JPEG_QUALITY)) # Pillow accepts 1..100
+
     results: List[Result] = [] # array for storing results
     slide = openslide.OpenSlide(slide_path) # opening slide
 
@@ -45,19 +45,19 @@ def jpg_run_tiles(
 
             # Encode to JPEG
             t0 = time.perf_counter()
-            jpeg_bytes = _encode_jpeg_to_bytes(raw, quality=jpeg_quality)
+            jpeg_bytes = _encode_jpeg_to_bytes(raw, quality=q)
             t1 = time.perf_counter()
 
             # Decode from JPEG
             t2 = time.perf_counter()
-            recon = np.array(Image.open(io.BytesIO(jpeg_bytes)).convert("RGB"), dtype=np.uint8)
+            recon = _decode_jpeg_bytes_to_rgb(jpeg_bytes)
             t3 = time.perf_counter()
 
             # Compute metrics
-            rb = _raw_bytes(t.w, t.h)
-            bo = len(jpeg_bytes)
-            cr = rb / max(1, bo)
-            s = _ssim_rgb(raw, recon)
+            rb = _raw_bytes(t.w, t.h) # raw = 3 * W * H
+            bo = len(jpeg_bytes)      # compressed bytes
+            cr = rb / max(1, bo)      # compressed vs raw bytes
+            s = _ssim_rgb(raw, recon) # structural similarity
 
             # Make a result object
             m = Result(
@@ -71,9 +71,8 @@ def jpg_run_tiles(
                 ssim=s
             )
             results.append(m)
-            print(m)
+            print(f"[{time.time()}][JPEG] Appended: {m}")
     finally:
         slide.close()
-        print("[JPEG] Complete")
 
     return results
