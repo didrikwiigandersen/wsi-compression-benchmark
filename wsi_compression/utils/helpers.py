@@ -11,7 +11,6 @@ import openslide
 from PIL import Image
 from typing import Tuple
 import math
-import io
 
 # ---------------- Helper functions --------------------
 def _load_mask_boolean(mask_png_path: str) -> np.ndarray:
@@ -64,27 +63,3 @@ def _iou_rect(ax, ay, aw, ah, bx, by, bw, bh) -> float:
         return 0.0
     union = aw*ah + bw*bh - inter
     return inter / union
-
-# ------------------- Helpers for engines --------------------- #
-def _raw_bytes(w: int, h: int) -> int:
-    # 8 bits/channel, 3 channels => 3 bytes per pixel
-    return int(w) * int(h) * 3
-
-def _read_tile_rgb(slide: openslide.OpenSlide, t: Tile) -> np.ndarray:
-    # OpenSlide returns RGBA; convert to RGB, uint8
-    return np.array(slide.read_region((t.x, t.y), 0, (t.w, t.h)).convert("RGB"), dtype=np.uint8)
-
-def _encode_jpeg_to_bytes(arr: np.ndarray, quality: int) -> bytes:
-    buf = io.BytesIO()
-    Image.fromarray(arr, mode="RGB").save(
-        buf,
-        format="JPEG",
-        quality=quality,
-        subsampling=0,   # 4:4:4
-        optimize=False,
-        progressive=False,
-    )
-    return buf.getvalue()
-
-def _ssim_rgb(a: np.ndarray, b: np.ndarray) -> float:
-    return ssim(a, b, channel_axis=2, data_range=255)

@@ -8,7 +8,7 @@ import numpy as np
 # ----------------------- Packages ----------------------- #
 from wsi_compression.utils.classes.Result import Result
 from wsi_compression.utils.classes.Tile import Tile
-from wsi_compression.utils.helpers import (
+from wsi_compression.utils.engine_helpers import (
     _raw_bytes,
     _read_tile_rgb,
     _encode_jpeg_to_bytes,
@@ -20,7 +20,7 @@ import io
 from PIL import Image
 
 # ----------------------- Main ----------------------- #
-def run_tiles(
+def jpg_run_tiles(
     slide_path: str,
     tiles: List[Tile],
     jpeg_quality: int = 80 # will never be lossless, inherent to JPEG format
@@ -35,11 +35,11 @@ def run_tiles(
     # ---------------- Setup ----------------- #
     results: List[Result] = [] # array for storing results
     slide = openslide.OpenSlide(slide_path) # opening slide
-    iterator = 0
+
+    # ---------------- Iteration ----------------- #
     try:
         # Iterate over each tile
         for t in tiles:
-            iterator += 1
             # Read raw file
             raw = _read_tile_rgb(slide, t)
 
@@ -61,7 +61,7 @@ def run_tiles(
 
             # Make a result object
             m = Result(
-                id=iterator,
+                id=t.id,
                 tile_data=t,
                 codec="jpeg",
                 raw_bytes=rb,
@@ -75,4 +75,5 @@ def run_tiles(
     finally:
         slide.close()
         print("[JPEG] Complete")
-        return results
+
+    return results
