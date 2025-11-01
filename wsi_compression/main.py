@@ -1,5 +1,5 @@
 """
-
+Main module for wsi_compression.
 """
 from wsi_compression.utils.sampling.tile_sampler import sample_tiles_with_mask
 from wsi_compression.utils.visualization.tile_visualizer import visualize_tiles
@@ -28,7 +28,7 @@ def main():
     # -------------------- Analysis ---------------------------------- #
     plot_cr_scatter_by_codec(
         jpeg_result, jxl_result, j2k_result,
-        savepath="/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/results/wsi_compression/analysis",
+        savepath="/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/results/wsi_compression/analysis/analysis.png",
         show=True
     )
 
