@@ -6,12 +6,14 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Settings:
-
     # Experiment controls
     NUM_TILES: int = 1000
     TILE_SIZE: int = 256
     LEVEL: int = 0
     RNG_SEED: int = 42
+    MIN_TISSUE_FRAC: float = 1.0
+    MAX_ATTEMPTS: int = 1_000_000
+    MAX_IOU: float = 1.0
 
     # Quality matching
     JPEG_QUALITY: int = 80

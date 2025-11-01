@@ -3,9 +3,6 @@ Utility file with helper functions used in tile_sampler.py and tile_visualizer.p
 """
 
 # ---------------- Packages --------------------
-from wsi_compression.utils.classes.Tile import Tile
-from skimage.metrics import structural_similarity as ssim
-
 import numpy as np
 import openslide
 from PIL import Image
@@ -13,17 +10,16 @@ from typing import Tuple
 import math
 
 # ---------------- Helper functions --------------------
-def _load_mask_boolean(mask_png_path: str) -> np.ndarray:
+def load_mask_boolean(mask_png_path: str) -> np.ndarray:
     """
-    Load a mask PNG as a boolean array (True = tissue).
-    Any nonzero grayscale value is considered tissue.
+    Load a mask PNG as a boolean array (True = tissue). Any nonzero grayscale value is considered tissue.
     """
     mask_img = Image.open(mask_png_path).convert('L') # grayscale
     mask_arr = np.array(mask_img, dtype=np.uint8)
     tissue = mask_arr > 0
     return tissue
 
-def _slide_mask_scales(slide: openslide.OpenSlide, mask_bool: np.ndarray) -> Tuple[float, float]:
+def slide_mask_scales(slide: openslide.OpenSlide, mask_bool: np.ndarray) -> Tuple[float, float]:
     """
     Compute scale factors to map slide level-0 coords to mask indices.
     mask_x = round(slide_x * sx), mask_y = round(slide_y * sy)
@@ -34,7 +30,7 @@ def _slide_mask_scales(slide: openslide.OpenSlide, mask_bool: np.ndarray) -> Tup
     sy = mask_h / float(slide_h)
     return sx, sy
 
-def _mask_rect_has_tissue(mask_bool: np.ndarray, x0: int, y0: int, w: int, h: int, sx: float, sy: float) -> Tuple[bool, int, int]:
+def mask_rect_has_tissue(mask_bool: np.ndarray, x0: int, y0: int, w: int, h: int, sx: float, sy: float) -> Tuple[bool, int, int]:
     """
     Given a slide-space rectangle (x0,y0,w,h), check if ANY mask pixel in the corresponding
     mask-space rectangle is tissue. Returns (has_tissue, tissue_count, examined_count).
@@ -45,7 +41,7 @@ def _mask_rect_has_tissue(mask_bool: np.ndarray, x0: int, y0: int, w: int, h: in
     mx1 = min(mask_bool.shape[1], int(math.ceil((x0 + w) * sx)))
     my1 = min(mask_bool.shape[0], int(math.ceil((y0 + h) * sy)))
 
-    if mx1 <= mx0 or my1 <= my0:  # degenerate mapping (shouldn't happen)
+    if mx1 <= mx0 or my1 <= my0:  # degenerate mapping
         return False, 0, 0
 
     patch = mask_bool[my0:my1, mx0:mx1]
@@ -53,7 +49,7 @@ def _mask_rect_has_tissue(mask_bool: np.ndarray, x0: int, y0: int, w: int, h: in
     examined = patch.size
     return (tissue_count > 0), tissue_count, examined
 
-def _iou_rect(ax, ay, aw, ah, bx, by, bw, bh) -> float:
+def iou_rect(ax, ay, aw, ah, bx, by, bw, bh) -> float:
     ax1, ay1 = ax + aw, ay + ah
     bx1, by1 = bx + bw, by + bh
     inter_w = max(0, min(ax1, bx1) - max(ax, bx))

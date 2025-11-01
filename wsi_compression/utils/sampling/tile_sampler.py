@@ -9,24 +9,17 @@ to ensure that the codec-engines work on the same data.
 
 # ---------------- Packages --------------------
 from wsi_compression.utils.classes.Tile import Tile
-from wsi_compression.utils.helpers import (
-    _load_mask_boolean,
-    _slide_mask_scales,
-    _mask_rect_has_tissue,
-    _iou_rect
+from wsi_compression.config import Settings
+from wsi_compression.utils.sampling.sampling_helpers import (
+    load_mask_boolean,
+    slide_mask_scales,
+    mask_rect_has_tissue,
+    iou_rect
 )
 
 from typing import List
 import openslide
 import numpy as np
-
-# ---------------- Global variables (for tuning) --------------------
-TILE_SIZE = 256
-NUM_TILES = 20
-SEED = 42
-MIN_TISSUE_FRAC = 1
-MAX_ATTEMPTS = 1_000_000
-MAX_IOU = 0
 
 # ---------------- Main --------------------
 def sample_tiles_with_mask(slide_path: str, mask_png_path: str) -> List[Tile]:
@@ -34,17 +27,27 @@ def sample_tiles_with_mask(slide_path: str, mask_png_path: str) -> List[Tile]:
     Samples 1000 unique tiles from 'slide_path', using 'mask_png_path' to ensure tissue presence.
     Returns: List[Tile] (level-0 coordinates). Also writes CSV '<slide_path>.tile_coords.csv'.
     """
+
+    # ----------- Setup -------------- #
+    s = Settings()
+    tile_size = s.TILE_SIZE
+    num_tiles = s.NUM_TILES
+    rng_seed = s.RNG_SEED
+    min_tissue_frac = s.MIN_TISSUE_FRAC # ensure each tile contains enough tissue (1.0 = tile must be fully covered)
+    max_attempts = s.MAX_ATTEMPTS
+    max_iou = s.MAX_IOU # how much overlap between any two sampled tiles (0.0 = no overlap, 1.0 = no restriction)
     slide = openslide.OpenSlide(slide_path)
+
     try:
         slide_w, slide_h = slide.dimensions
-        if TILE_SIZE > slide_w or TILE_SIZE > slide_h:
+        if tile_size > slide_w or tile_size > slide_h:
             raise ValueError(
-                f"TILE_SIZE={TILE_SIZE} is larger than slide dimensions {slide_w}x{slide_h}."
+                f"TILE_SIZE={tile_size} is larger than slide dimensions {slide_w}x{slide_h}."
             )
 
         # ---- Load mask & scales ----
-        mask_bool = _load_mask_boolean(mask_png_path)
-        sx, sy = _slide_mask_scales(slide, mask_bool)
+        mask_bool = load_mask_boolean(mask_png_path)
+        sx, sy = slide_mask_scales(slide, mask_bool)
 
         # Warn if aspect ratios differ a lot
         mask_h, mask_w = mask_bool.shape
@@ -58,12 +61,12 @@ def sample_tiles_with_mask(slide_path: str, mask_png_path: str) -> List[Tile]:
         if tissue_xs.size == 0:
             raise ValueError("Mask has no tissue pixels (all zeros).")
 
-        rng = np.random.default_rng(SEED)
+        rng = np.random.default_rng(rng_seed)
         chosen: List[Tile] = []
         chosen_set = set()
 
         attempts = 0
-        while len(chosen) < NUM_TILES and attempts < MAX_ATTEMPTS:
+        while len(chosen) < num_tiles and attempts < max_attempts:
             attempts += 1
 
             # Pick a random tissue pixel in mask-space
@@ -76,30 +79,30 @@ def sample_tiles_with_mask(slide_path: str, mask_png_path: str) -> List[Tile]:
             py = int(round(my / sy))
 
             # Choose a tile top-left so (px,py) lies inside the tile
-            x0_lo = px - TILE_SIZE + 1
+            x0_lo = px - tile_size + 1
             x0_hi = px
-            y0_lo = py - TILE_SIZE + 1
+            y0_lo = py - tile_size + 1
             y0_hi = py
 
             x0 = int(rng.integers(x0_lo, x0_hi + 1))
             y0 = int(rng.integers(y0_lo, y0_hi + 1))
-            x0 = max(0, min(x0, slide_w - TILE_SIZE))
-            y0 = max(0, min(y0, slide_h - TILE_SIZE))
+            x0 = max(0, min(x0, slide_w - tile_size))
+            y0 = max(0, min(y0, slide_h - tile_size))
 
             key = (x0, y0)
             if key in chosen_set:
                 continue
 
-            has_tissue, tissue_count, examined = _mask_rect_has_tissue(
-                mask_bool, x0, y0, TILE_SIZE, TILE_SIZE, sx, sy
+            has_tissue, tissue_count, examined = mask_rect_has_tissue(
+                mask_bool, x0, y0, tile_size, tile_size, sx, sy
             )
             coverage = (tissue_count / examined) if examined > 0 else 0.0
-            if not has_tissue or coverage < MIN_TISSUE_FRAC:
+            if not has_tissue or coverage < min_tissue_frac:
                 continue
 
             ok_overlap = True
             for t in chosen:  # chosen is your List[Tile]
-                if _iou_rect(x0, y0, TILE_SIZE, TILE_SIZE, t.x, t.y, t.w, t.h) > MAX_IOU:
+                if iou_rect(x0, y0, tile_size, tile_size, t.x, t.y, t.w, t.h) > max_iou:
                     ok_overlap = False
                     break
             if not ok_overlap:
@@ -108,9 +111,9 @@ def sample_tiles_with_mask(slide_path: str, mask_png_path: str) -> List[Tile]:
             # Accept tile
             chosen_set.add(key)
             tile_id = len(chosen)
-            chosen.append(Tile(id=tile_id, x=x0, y=y0, w=TILE_SIZE, h=TILE_SIZE, area=coverage))
+            chosen.append(Tile(id=tile_id, x=x0, y=y0, w=tile_size, h=tile_size, area=coverage))
 
-        if len(chosen) < NUM_TILES:
+        if len(chosen) < num_tiles:
             raise RuntimeError(
                 f"Only found {len(chosen)} unique tiles with tissue after {attempts} attempts. "
                 f"Consider reducing TILE_SIZE or NUM_TILES, or verify the mask coverage."

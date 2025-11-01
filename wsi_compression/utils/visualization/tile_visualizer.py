@@ -7,7 +7,7 @@ from typing import List, Tuple
 import numpy as np
 from PIL import Image, ImageDraw
 import openslide
-from wsi_compression.utils.helpers import _load_mask_boolean
+from wsi_compression.utils.sampling.sampling_helpers import _load_mask_boolean
 
 # ---------------- Main --------------------
 def visualize_tiles_on_overview(
