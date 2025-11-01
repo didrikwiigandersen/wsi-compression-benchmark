@@ -8,7 +8,8 @@ from engines.jxl_engine import jxl_run_tiles
 
 from wsi_compression.engines.j2k_engine import j2k_run_tiles
 from wsi_compression.utils.analysis.analysis_helpers import (
-    plot_cr_scatter_by_codec
+    plot_cr_scatter_by_codec,
+    jxl_superiority_tests
 )
 from wsi_compression.config import Settings
 
@@ -28,9 +29,14 @@ def main():
     # -------------------- Analysis ---------------------------------- #
     plot_cr_scatter_by_codec(
         jpeg_result, jxl_result, j2k_result,
-        savepath="/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/results/wsi_compression/analysis/analysis.png",
+        savepath=s.SCATTER_PUT_PATH,
         show=True
     )
+
+    df_long = plot_cr_scatter_by_codec(jpeg_result, jxl_result, j2k_result, show=False)
+    stats_out = jxl_superiority_tests(df_long)
+    print(stats_out)
+
 
 if __name__ == '__main__':
     main()

@@ -1,5 +1,7 @@
 """
 Visualizes the chosen tiles over the mask.
+
+Made with GPT. Not for production.
 """
 
 # ---------------- Packages --------------------

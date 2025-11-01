@@ -5,8 +5,6 @@ __pycache__/
 env/
 .venv/
 
-scripts/compare_wsi_jxl_vs_jpg.py
-
 # Data / results
 data/
 results/
@@ -16,3 +14,7 @@ results/
 
 # JetBrains
 .idea/
+
+# Repo specific folders
+wsi_compression/utils/analysis
+wsi_compression/utils/visualization

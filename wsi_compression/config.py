@@ -7,13 +7,13 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Settings:
     # Experiment controls
-    NUM_TILES: int = 5
+    NUM_TILES: int = 100
     TILE_SIZE: int = 256
     LEVEL: int = 0
     RNG_SEED: int = 42
     MIN_TISSUE_FRAC: float = 1.0
     MAX_ATTEMPTS: int = 1_000_000
-    MAX_IOU: float = 1.0
+    MAX_IOU: float = 0.0
 
     # Quality matching
     JPEG_QUALITY: int = 80
@@ -32,6 +32,7 @@ class Settings:
     J2K_RATE_MAX: float = 1200.0
 
     # Paths
+    SCATTER_PUT_PATH: str = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/results/wsi_compression/analysis/analysis.png"
     VIZ_OUT_PATH: str = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/results/wsi_compression/visualization/wsi_with_tiles.png"
-    SLIDE_PATH = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/data/lab_sample.ndpi"
-    MASK_PATH = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/data/mask.png"
+    SLIDE_PATH: str = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/data/lab_sample.ndpi"
+    MASK_PATH: str = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/data/mask.png"

@@ -1,14 +1,89 @@
 """
 Helper functions for analysis.
+
+Made with GPT, not for production.
 """
 
 # ----------------------- Packages ----------------------- #
-import pandas as pd
 import matplotlib.pyplot as plt
 from typing import List, Optional, Iterable, Union
 from wsi_compression.utils.classes.Result import Result
 
 # ----------------------- Functions ----------------------- #
+
+import numpy as np, pandas as pd
+from scipy import stats
+
+def _prep_wide(df_long: pd.DataFrame) -> pd.DataFrame:
+    # expects columns: tile_id, codec, cr (codec in {'jpeg','jxl','j2k'})
+    df = df_long.copy()
+    df["codec"] = df["codec"].str.lower().replace({"jpg": "jpeg"})
+    wide = df.pivot_table(index="tile_id", columns="codec", values="cr", aggfunc="first")
+    need = [c for c in ["jxl","jpeg","j2k"] if c in wide.columns]
+    wide = wide.dropna(subset=need)
+    return wide[need]
+
+def _bootstrap_ci(x: np.ndarray, stat_fn, n_boot=10_000, seed=42, alpha=0.05):
+    rng = np.random.default_rng(seed)
+    n = len(x)
+    boots = np.empty(n_boot, dtype=float)
+    for b in range(n_boot):
+        idx = rng.integers(0, n, n)
+        boots[b] = stat_fn(x[idx])
+    lo = np.quantile(boots, alpha/2)
+    hi = np.quantile(boots, 1 - alpha/2)
+    return float(lo), float(hi)
+
+def jxl_superiority_tests(df_long: pd.DataFrame, alpha=0.05, n_boot=10_000):
+    W = _prep_wide(df_long)  # columns present: jxl, jpeg, j2k
+    out = {}
+
+    def _one(comp: str):
+        x = W["jxl"].to_numpy()
+        y = W[comp].to_numpy()
+        # Differences & ratios
+        diff = x - y
+        log_ratio = np.log(x / y)
+
+        # Paired Wilcoxon (robust) — H1: JXL > comparator
+        w_stat, p_wilc = stats.wilcoxon(x, y, alternative="greater", zero_method="pratt")
+
+        # Paired t-test on log-ratio (means multiplicative) — H1: log(x/y) > 0
+        t_stat, p_t = stats.ttest_rel(log_ratio, np.zeros_like(log_ratio), alternative="greater")
+
+        # Effect sizes
+        med_diff = float(np.median(diff))
+        med_gain = float(np.median(x / y))           # median multiplicative gain
+        med_diff_ci = _bootstrap_ci(diff, np.median, n_boot=n_boot, alpha=alpha)
+        med_gain_ci = _bootstrap_ci(x / y, np.median, n_boot=n_boot, alpha=alpha)
+
+        return {
+            "n_tiles": int(len(diff)),
+            "wilcoxon_stat": float(w_stat), "p_wilcoxon": float(p_wilc),
+            "ttest_logratio_t": float(t_stat), "p_ttest_logratio": float(p_t),
+            "median_diff_cr": med_diff, "median_diff_cr_ci": med_diff_ci,
+            "median_gain_ratio": med_gain, "median_gain_ratio_ci": med_gain_ci,
+            "pct_tiles_jxl_higher": float((diff > 0).mean()*100.0),
+        }
+
+    # Two paired comparisons
+    res_jpeg = _one("jpeg") if "jpeg" in W.columns else None
+    res_j2k  = _one("j2k")  if "j2k"  in W.columns else None
+
+    # Holm correction for two tests
+    pvals = [r["p_wilcoxon"] for r in [res_jpeg, res_j2k] if r is not None]
+    order = np.argsort(pvals)
+    adj = [None]*len(pvals)
+    for rank, idx in enumerate(order, start=1):
+        adj[idx] = min((len(pvals) - rank + 1)*pvals[idx], 1.0)
+
+    k = 0
+    if res_jpeg is not None:
+        res_jpeg["p_wilcoxon_holm"] = adj[k]; k+=1
+    if res_j2k is not None:
+        res_j2k["p_wilcoxon_holm"] = adj[k] if len(adj)>k else None
+
+    return {"JXL_vs_JPEG": res_jpeg, "JXL_vs_J2K": res_j2k}
 
 def _results_to_df_any(x: Union[List[Result], pd.DataFrame]) -> pd.DataFrame:
     """
