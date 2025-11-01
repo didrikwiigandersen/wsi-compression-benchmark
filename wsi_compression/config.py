@@ -7,7 +7,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Settings:
     # Experiment controls
-    NUM_TILES: int = 1000
+    NUM_TILES: int = 5
     TILE_SIZE: int = 256
     LEVEL: int = 0
     RNG_SEED: int = 42
@@ -30,3 +30,8 @@ class Settings:
     J2K_RATE_LO: float = 1.0
     J2K_RATE_HI: float = 600.0
     J2K_RATE_MAX: float = 1200.0
+
+    # Paths
+    VIZ_OUT_PATH: str = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/results/wsi_compression/visualization/wsi_with_tiles.png"
+    SLIDE_PATH = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/data/lab_sample.ndpi"
+    MASK_PATH = "/Users/didrikwiig-andersen/palette-research/projects/pathology-compression/data/mask.png"

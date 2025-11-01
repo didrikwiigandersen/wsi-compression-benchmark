@@ -22,7 +22,7 @@ import openslide
 import numpy as np
 
 # ---------------- Main --------------------
-def sample_tiles_with_mask(slide_path: str, mask_png_path: str) -> List[Tile]:
+def sample_tiles_with_mask(slide_path: str, mask_png_path: str, rng_seed: int = 42) -> List[Tile]:
     """
     Samples 1000 unique tiles from 'slide_path', using 'mask_png_path' to ensure tissue presence.
     Returns: List[Tile] (level-0 coordinates). Also writes CSV '<slide_path>.tile_coords.csv'.
@@ -32,7 +32,6 @@ def sample_tiles_with_mask(slide_path: str, mask_png_path: str) -> List[Tile]:
     s = Settings()
     tile_size = s.TILE_SIZE
     num_tiles = s.NUM_TILES
-    rng_seed = s.RNG_SEED
     min_tissue_frac = s.MIN_TISSUE_FRAC # ensure each tile contains enough tissue (1.0 = tile must be fully covered)
     max_attempts = s.MAX_ATTEMPTS
     max_iou = s.MAX_IOU # how much overlap between any two sampled tiles (0.0 = no overlap, 1.0 = no restriction)

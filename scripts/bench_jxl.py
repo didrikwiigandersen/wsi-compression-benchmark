@@ -97,7 +97,7 @@ def main():
         # dec = the same tile after compress + decompress
         dec = Image.open(dec_png).convert("RGB")
 
-        # Convert the images into arrays for comparison
+        # Convert the visualization into arrays for comparison
         a = np.asarray(img, dtype=np.float32) / 255.0
         b = np.asarray(dec, dtype=np.float32) / 255.0
 
