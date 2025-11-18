@@ -2,5 +2,3 @@ openslide-python
 pillow
 numpy
 scikit-image
-
-

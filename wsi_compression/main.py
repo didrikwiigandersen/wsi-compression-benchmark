@@ -37,6 +37,5 @@ def main():
     stats_out = jxl_superiority_tests(df_long)
     print(stats_out)
 
-
 if __name__ == '__main__':
     main()

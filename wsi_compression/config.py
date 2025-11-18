@@ -7,7 +7,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Settings:
     # Experiment controls
-    NUM_TILES: int = 100
+    NUM_TILES: int = 1000
     TILE_SIZE: int = 256
     LEVEL: int = 0
     RNG_SEED: int = 42
@@ -21,7 +21,7 @@ class Settings:
     MAX_ITERS: int = 12
 
     # JXL tuning
-    JXL_EFFORT: int = 7
+    JXL_EFFORT: int = 9
     JXL_DIST_LO: float = 0.0
     JXL_DIST_HI: float = 3.0
     JXL_DIST_MAX: float = 6.0
