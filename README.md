@@ -263,9 +263,9 @@ pathology-compression/
 │   └── utils/                # Utility modules
 │       ├── sampling/         # Tile sampling logic
 │       ├── engines/          # Codec-specific helpers
-│       ├── analysis/        # Statistical analysis
-│       ├── visualization/   # Plotting functions
-│       └── classes/         # Data structures
+│       ├── analysis/         # Statistical analysis
+│       ├── visualization/    # Plotting functions
+│       └── classes/          # Data structures
 ├── data/                     # Input data (slides, masks)
 ├── results/                  # Output directory
 ├── scripts/                  # Additional analysis scripts
